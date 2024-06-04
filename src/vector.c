@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <vector.h>
+#include "../include/vector.h"
 
 
 // Creates a vector that can hold (size) elements. Will resize itself if needed.
