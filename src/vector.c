@@ -55,7 +55,7 @@ void vector_push_back(Vector *vector, void *data)
 void *vector_get(Vector *vector, size_t index)
 {
     // Index is out of bounds
-    if (index >= vector->size)
+    if (index > vector->size)
     {
         return NULL;
     }
@@ -67,7 +67,7 @@ void *vector_get(Vector *vector, size_t index)
 void vector_remove(Vector *vector, size_t index)
 {
     // Index is out of bounds
-    if (index >= vector->size)
+    if (index > vector->size)
     {
         return;
     }
