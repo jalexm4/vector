@@ -1,34 +1,33 @@
 //
 // C implementation of the C++ vector datastructure.
-// Currently uses an array of void pointers.
 //
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <vector/vector.h>
 
 
-// Creates a vector that can hold (size) elements. Will resize itself if needed.
-Vector *vector_create(size_t size)
+// Creates a vector datastructure of (size) elements of (datatype_size) bytes. Resizes if capacity reached.
+Vector *vector_create(size_t size, size_t datatype_size)
 {
     // Allocate memory for the Vector struct.
     Vector *vector = malloc(sizeof(Vector));
     if (!vector)
     {
-        printf("[*] Unable to allocate %lu bytes\n", sizeof(Vector));
         return NULL;
     }
 
     // Vector currently contains 0 elements and can hold up to (size) before a resize operation.
     vector->size = 0;
     vector->capacity = size;
+    vector->datatype_size = datatype_size;
 
-    // Allocate memory for (size) pointers.
-    vector->data = malloc(sizeof(void *) * vector->capacity);
+    // Allocate memory for to store (size) of a datatype.
+    vector->data = malloc(vector->datatype_size * vector->capacity);
     if (!vector->data)
     {
-        printf("[*] Unable to allocate %lu bytes\n", sizeof(void *) * vector->capacity);
+        free(vector);
         return NULL;
     }
 
@@ -44,8 +43,12 @@ void vector_push_back(Vector *vector, void *data)
         vector_resize(vector);
     }
 
-    // Storing pointer
-    vector->data[vector->size] = data;
+    // Byte offset to write (data) bytes into.
+    void *dest = (char *) vector->data + (vector->size * vector->datatype_size);
+
+    // Write data into vector
+    memcpy(dest, data, vector->datatype_size);
+
     vector->size++;
 
     return;
@@ -60,7 +63,10 @@ void *vector_get(Vector *vector, size_t index)
         return NULL;
     }
 
-    return vector->data[index];
+    // Pointer to byte offset of an element in the vector
+    void *data = (char *) vector->data + (index * vector->datatype_size);
+
+    return data;
 }
 
 
@@ -72,14 +78,17 @@ void vector_remove(Vector *vector, size_t index)
         return;
     }
 
-    // Deallocate whatever the pointer is storing
-    free(vector->data[index]);
+    // Byte offset of element to be removed
+    void *target = (char *) vector->data + (index * vector->datatype_size);
 
-    // Shift the vector to align properly
-    for (size_t i = index, n = vector->size - 1; i < n; i++)
-    {
-        vector->data[i] = vector->data[i + 1];
-    }
+    // Byte offset of the next element after the one to be removed
+    void *next = (char *) target + vector->datatype_size;
+
+    // Bytes to be shifted
+    size_t bytes = (vector->size - index - 1) * vector->datatype_size;
+
+    // Shift elements
+    memmove(target, next, bytes);
 
     vector->size--;
 
@@ -91,25 +100,14 @@ void vector_resize(Vector *vector)
     // Double space available
     vector->capacity *= 2;
 
-    // Allocate memory for new capacity
-    vector->data = realloc(vector->data, sizeof(void *) * vector->capacity);
-    if (vector->data == NULL)
-    {
-        printf("[*] Unable to allocate %lu bytes\n", sizeof(void *) * vector->capacity);
-    }
+    // Allocate concurrent memory for new capacity
+    vector->data = realloc(vector->data, vector->datatype_size * vector->capacity);
 
     return;
 }
 
 void vector_free(Vector *vector)
 {
-    // Deallocate all elements
-    for (size_t i = 0, n = vector->size; i < n; i++)
-    {
-        free(vector->data[i]);
-    }
-
-    // Dellocate pointer to pointer array and Vector struct
     free(vector->data);
     free(vector);
 
